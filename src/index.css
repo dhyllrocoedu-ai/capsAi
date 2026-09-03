@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-surface-50 text-surface-900 dark:bg-surface-950 dark:text-surface-100;
+    font-feature-settings: "cv02", "cv03", "cv04";
+  }
+
+  ::selection {
+    @apply bg-brand-500/30;
+  }
+}
+
+/* ---------- TipTap editor content styles ---------- */
+.ProseMirror {
+  min-height: 60vh;
+  outline: none;
+}
+
+.ProseMirror p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+
+.ProseMirror h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.ProseMirror h3 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.075rem;
+  font-weight: 600;
+}
+
+.ProseMirror ul {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  list-style: disc;
+}
+
+.ProseMirror ol {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+  list-style: decimal;
+}
+
+.ProseMirror blockquote {
+  margin-bottom: 1rem;
+  border-left: 4px solid #cbd5e1;
+  padding-left: 1rem;
+  font-style: italic;
+}
+
+.dark .ProseMirror blockquote {
+  border-color: #334155;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  pointer-events: none;
+  float: left;
+  height: 0;
+  color: #94a3b8;
+}
+
+/* Thin scrollbars for panel-heavy layouts */
+* {
+  scrollbar-width: thin;
+}
