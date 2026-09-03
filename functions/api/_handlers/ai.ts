@@ -425,26 +425,6 @@ IMPORTANT: Return ONLY valid JSON. No extra prose.`;
     return cors(serverError(err instanceof Error ? err.message : "Wizard suggestion failed."));
   }
 }
-        }
-        push("[DONE]");
-      } catch (err) {
-        push({ error: err instanceof Error ? err.message : "stream failed" });
-        push("[DONE]");
-      } finally {
-        controller.close();
-        reader.releaseLock();
-      }
-    },
-  });
-
-  return cors(withUsage(new Response(stream, {
-    status: 200,
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache",
-    },
-  }), charged));
-}
 
 // ---------------------------------------------------------------------------
 // Handler: POST /api/ai/generate
