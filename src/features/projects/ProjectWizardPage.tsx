@@ -19,6 +19,13 @@ import { type ProjectProfile } from "@/types";
 import { emptyProjectProfile } from "@/types";
 import { getProfile, saveProfile } from "@/lib/repositories/projectRepo";
 import { getAIProvider, buildSystemPrompt, buildProjectContext } from "@/services/ai";
+import {
+  analyzeWizardProfile,
+  autofillWizardProfile,
+  getWizardQuestions,
+  type WizardAnalysis,
+  type WizardQuestion,
+} from "@/services/thesis/wizardAi";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { DynamicFieldList } from "@/features/projects/DynamicFieldList";
 
@@ -76,6 +83,12 @@ export function ProjectWizardPage() {
   const [summarizing, setSummarizing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // AI suggestions state
+  const [aiAnalysis, setAiAnalysis] = useState<WizardAnalysis | null>(null);
+  const [aiQuestions, setAiQuestions] = useState<WizardQuestion[]>([]);
+  const [aiLoading, setAiLoading] = useState<"analyze" | "autofill" | "questions" | null>(null);
+  const [showAiPanel, setShowAiPanel] = useState(false);
+
   const stepIndex = STEPS.findIndex((s) => s.key === step);
   const pct = useMemo(() => profilePercent(profile), [profile]);
 
@@ -98,6 +111,76 @@ export function ProjectWizardPage() {
     setSaving(true);
     saveProfile(profile);
     setTimeout(() => setSaving(false), 400);
+  };
+
+  // --- AI Wizard helpers ---
+  const runAnalyze = async () => {
+    setAiLoading("analyze");
+    setShowAiPanel(true);
+    const result = await analyzeWizardProfile(profile as unknown as Record<string, unknown>, step);
+    setAiLoading(null);
+    if ("error" in result) {
+      console.error("Analysis failed:", result.error);
+    } else {
+      setAiAnalysis(result);
+      setAiQuestions([]);
+    }
+  };
+
+  const runAutofill = async () => {
+    setAiLoading("autofill");
+    setShowAiPanel(true);
+    const result = await autofillWizardProfile(profile as unknown as Record<string, unknown>, step);
+    setAiLoading(null);
+    if ("error" in result) {
+      console.error("Autofill failed:", result.error);
+    } else {
+      // Apply all suggested values to the profile
+      setProfile((prev) => {
+        let next = { ...prev, updatedAt: new Date().toISOString() };
+        for (const [field, { value }] of Object.entries(result)) {
+          // @ts-expect-error dynamic field assignment
+          if (field in next && value) next[field] = value;
+        }
+        if (projectId) saveProfile(next);
+        return next;
+      });
+    }
+  };
+
+  const runQuestions = async () => {
+    setAiLoading("questions");
+    setShowAiPanel(true);
+    const result = await getWizardQuestions(profile as unknown as Record<string, unknown>, step);
+    setAiLoading(null);
+    if ("error" in result) {
+      console.error("Questions failed:", result.error);
+    } else {
+      setAiQuestions(result);
+      setAiAnalysis(null);
+    }
+  };
+
+  const applyAiQuestion = (question: WizardQuestion, choiceValue: string) => {
+    setProfile((prev) => {
+      const next = { ...prev, [question.field]: choiceValue, updatedAt: new Date().toISOString() };
+      if (projectId) saveProfile(next);
+      return next;
+    });
+    setAiQuestions((prev) => prev.filter((q) => q.field !== question.field));
+  };
+
+  const dismissAiSuggestion = (field: string) => {
+    setAiAnalysis((prev) => {
+      if (!prev) return null;
+      const { fieldSuggestions, ...rest } = prev;
+      const { [field]: _, ...remaining } = fieldSuggestions;
+      return { ...rest, fieldSuggestions: remaining };
+    });
+  };
+
+  const dismissAiQuestion = (field: string) => {
+    setAiQuestions((prev) => prev.filter((q) => q.field !== field));
   };
 
   const runSummary = async () => {
@@ -222,6 +305,18 @@ export function ProjectWizardPage() {
           summarizing={summarizing}
           onRunSummary={runSummary}
           saving={saving}
+          // AI props
+          aiAnalysis={aiAnalysis}
+          aiQuestions={aiQuestions}
+          aiLoading={aiLoading}
+          showAiPanel={showAiPanel}
+          setShowAiPanel={setShowAiPanel}
+          runAnalyze={runAnalyze}
+          runAutofill={runAutofill}
+          runQuestions={runQuestions}
+          applyAiQuestion={applyAiQuestion}
+          dismissAiSuggestion={dismissAiSuggestion}
+          dismissAiQuestion={dismissAiQuestion}
         />
       </div>
     </div>
@@ -290,6 +385,18 @@ function Step({
   summarizing,
   onRunSummary,
   saving,
+  // AI props
+  aiAnalysis,
+  aiQuestions,
+  aiLoading,
+  showAiPanel,
+  setShowAiPanel,
+  runAnalyze,
+  runAutofill,
+  runQuestions,
+  applyAiQuestion,
+  dismissAiSuggestion,
+  dismissAiQuestion,
 }: {
   step: WizardStep;
   profile: ProjectProfile;
@@ -301,6 +408,18 @@ function Step({
   summarizing: boolean;
   onRunSummary: () => void;
   saving: boolean;
+  // AI props
+  aiAnalysis: import("@/services/thesis/wizardAi").WizardAnalysis | null;
+  aiQuestions: import("@/services/thesis/wizardAi").WizardQuestion[];
+  aiLoading: "analyze" | "autofill" | "questions" | null;
+  showAiPanel: boolean;
+  setShowAiPanel: (show: boolean) => void;
+  runAnalyze: () => Promise<void>;
+  runAutofill: () => Promise<void>;
+  runQuestions: () => Promise<void>;
+  applyAiQuestion: (question: import("@/services/thesis/wizardAi").WizardQuestion, choiceValue: string) => void;
+  dismissAiSuggestion: (field: string) => void;
+  dismissAiQuestion: (field: string) => void;
 }) {
   const isLast = step === "summary";
   const isFirst = step === "problem";
@@ -485,6 +604,145 @@ function Step({
             </h3>
             <ProfileChecklist profile={profile} />
           </div>
+        </div>
+      )}
+
+      {/* AI Suggestions Panel */}
+      {showAiPanel && (
+        <div className="mt-6 rounded-xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-800 dark:bg-brand-950">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-brand-700 dark:text-brand-300 flex items-center gap-2">
+              <BotMessageSquare className="h-4 w-4" />
+              AI Suggestions
+            </h3>
+            <Button variant="ghost" size="sm" onClick={() => setShowAiPanel(false)}>
+              ✕
+            </Button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={runAnalyze}
+              loading={aiLoading === "analyze"}
+              disabled={aiLoading !== null}
+            >
+              <Lightbulb className="h-3.5 w-3.5" /> Analyze
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={runAutofill}
+              loading={aiLoading === "autofill"}
+              disabled={aiLoading !== null}
+            >
+              Auto-fill missing
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={runQuestions}
+              loading={aiLoading === "questions"}
+              disabled={aiLoading !== null}
+            >
+              Get Questions
+            </Button>
+          </div>
+
+          {/* Analysis results */}
+          {aiAnalysis && (
+            <div className="space-y-3">
+              {aiAnalysis.strengths.length > 0 && (
+                <div className="rounded-lg bg-emerald-50 p-3 dark:bg-emerald-900/20">
+                  <h4 className="mb-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                    Strengths
+                  </h4>
+                  <ul className="text-[11px] text-emerald-600 dark:text-emerald-400 space-y-0.5">
+                    {aiAnalysis.strengths.map((s, i) => (
+                      <li key={i}>• {s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {aiAnalysis.gaps.length > 0 && (
+                <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
+                  <h4 className="mb-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+                    Gaps to address
+                  </h4>
+                  <ul className="text-[11px] text-amber-600 dark:text-amber-400 space-y-0.5">
+                    {aiAnalysis.gaps.map((g, i) => (
+                      <li key={i}>• {g}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {Object.keys(aiAnalysis.fieldSuggestions).length > 0 && (
+                <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
+                  <h4 className="mb-2 text-xs font-semibold text-blue-700 dark:text-blue-400">
+                    Field suggestions
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(aiAnalysis.fieldSuggestions).map(([field, { suggestedValue, reasoning }]) => (
+                      <div key={field} className="flex items-start gap-2 p-2 rounded bg-white dark:bg-surface-800 border border-surface-200 dark:border-surface-700">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">{field}</p>
+                          <p className="text-[10px] text-surface-500 dark:text-surface-400 mt-0.5">{suggestedValue}</p>
+                          <p className="text-[10px] text-surface-400 dark:text-surface-500 mt-0.5 italic">{reasoning}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button size="sm" variant="secondary" onClick={() => {
+                            patch(field as keyof ProjectProfile, suggestedValue as any);
+                            dismissAiSuggestion(field);
+                          }}>
+                            Apply
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => dismissAiSuggestion(field)}>
+                            ✕
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Questions */}
+          {aiQuestions.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold text-purple-700 dark:text-purple-400">
+                Clarifying questions
+              </h4>
+              {aiQuestions.map((q) => (
+                <div key={q.field} className="rounded-lg bg-purple-50 p-3 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+                  <p className="mb-2 text-xs font-medium text-purple-700 dark:text-purple-300">{q.question}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {q.choices.map((choice, ci) => (
+                      <Button
+                        key={ci}
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => applyAiQuestion(q, choice.value)}
+                      >
+                        {choice.label}
+                      </Button>
+                    ))}
+                    <Button size="sm" variant="ghost" onClick={() => dismissAiQuestion(q.field)}>
+                      Dismiss
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(!aiAnalysis || Object.keys(aiAnalysis?.fieldSuggestions || {}).length === 0) && aiQuestions.length === 0 && !aiLoading && (
+            <p className="text-center text-xs text-surface-500 dark:text-surface-400 py-4">
+              Click "Analyze" to get AI suggestions for this step
+            </p>
+          )}
         </div>
       )}
 
