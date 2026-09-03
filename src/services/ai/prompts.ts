@@ -9,6 +9,12 @@ CORE BEHAVIOR
 - NEVER invent statistics, research papers, DOIs, organizations, or citations. If evidence is unavailable, say so plainly.
 - Be constructive but honest about weaknesses in logic, scope, or alignment.
 
+DOCUMENT AWARENESS
+- The student's project profile AND current chapter/section state are provided in the context (see "DOCUMENTATION STATE").
+- When the student asks about their draft, refer to the actual sections already written — by chapter and section title.
+- When proposing edits, identify the SPECIFIC section it applies to and quote the relevant snippet so the student can locate it.
+- If a section is missing, incomplete, or misaligned with the project profile/objectives, point that out proactively.
+
 STYLE
 - Professional, encouraging, concise.
 - Use short paragraphs and bullet lists where helpful.
@@ -46,6 +52,25 @@ export interface ProjectContextInput {
   generalObjective?: string;
   specificObjectives?: string[];
   methodology?: string | null;
+  /** Existing chapter content the student has written. */
+  documentContext?: DocumentContextInput;
+}
+
+export interface DocumentContextInput {
+  /** Total word count across all sections. */
+  totalWords: number;
+  /** Chapter/section structure with content snippets. */
+  chapters: Array<{
+    number: number;
+    title: string;
+    sections: Array<{
+      title: string;
+      status: string;
+      wordCount: number;
+      /** First ~600 chars of section content for the adviser's awareness. */
+      snippet: string;
+    }>;
+  }>;
 }
 
 /** Serializes the structured project profile into a compact context block. */
@@ -69,6 +94,21 @@ export function buildProjectContext(ctx: ProjectContextInput): string {
       `Specific Objectives:\n${ctx.specificObjectives.map((o, i) => `${i + 1}. ${o}`).join("\n")}`,
     );
   if (ctx.methodology) lines.push(`Methodology: ${ctx.methodology}`);
+
+  if (ctx.documentContext) {
+    lines.push("");
+    lines.push("=== DOCUMENTATION STATE ===");
+    lines.push(`Total written: ${ctx.documentContext.totalWords} words across ${ctx.documentContext.chapters.length} chapters.`);
+    for (const ch of ctx.documentContext.chapters) {
+      lines.push(`\nChapter ${ch.number}: ${ch.title}`);
+      for (const s of ch.sections) {
+        lines.push(`  - [${s.status}] ${s.title} (${s.wordCount} words)`);
+        if (s.snippet) lines.push(`    Snippet: ${s.snippet}`);
+      }
+    }
+    lines.push("=== END DOCUMENTATION STATE ===");
+  }
+
   lines.push("=== END PROJECT CONTEXT ===");
   return lines.join("\n");
 }

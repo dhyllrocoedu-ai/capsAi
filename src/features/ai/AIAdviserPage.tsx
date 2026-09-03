@@ -29,6 +29,7 @@ import {
 import { getAIProvider } from "@/services/ai";
 import type { ProjectContextInput } from "@/services/ai/prompts";
 import { NIVIDA_MODELS } from "@/services/ai/models";
+import { buildDocumentContext } from "@/services/ai/documentContext";
 import { Markdown } from "@/components/ui/Markdown";
 import { aiChatStream, QuotaError } from "@/lib/api/ai";
 import { UsageMeter, QuotaBlockedCard } from "@/components/ai/UsageMeter";
@@ -223,6 +224,9 @@ const userTurn: ChatTurn = {
           generalObjective: profile?.generalObjective ?? "",
           specificObjectives: profile?.specificObjectives ?? [],
           methodology: profile?.methodology ?? null,
+          // Include existing chapter content so the adviser can review and
+          // suggest changes to what the student has actually written.
+          documentContext: buildDocumentContext(project.id),
         };
 
         if (shouldGenerateFile) {
