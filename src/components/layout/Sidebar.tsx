@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   BotMessageSquare,
+  ChevronDown,
   FileText,
   FolderKanban,
   GraduationCap,
@@ -31,6 +33,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const activeProject = projects.find(
     (p) => p.id === (params.projectId ?? null),
   );
+  const [projectOpen, setProjectOpen] = useState(true);
 
   return (
     <>
@@ -100,40 +103,55 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
           {/* Project-scoped shortcuts when a project is active */}
           {activeProject && (
-            <>
-              <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-surface-400">
-                This Project
-              </p>
-              <NavLink
-                to="/app/projects/$projectId"
-                params={{ projectId: activeProject.id }}
-                exact
+            <section>
+              <button
+                type="button"
+                onClick={() => setProjectOpen((v) => !v)}
+                className="flex w-full items-center justify-between px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-wider text-surface-400 hover:text-surface-600 dark:hover:text-surface-200"
+                aria-expanded={projectOpen}
               >
-                <FolderKanban className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Overview</span>
-              </NavLink>
-              <NavLink
-                to="/app/projects/$projectId/adviser"
-                params={{ projectId: activeProject.id }}
-              >
-                <BotMessageSquare className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Adviser Chat</span>
-              </NavLink>
-              <NavLink
-                to="/app/projects/$projectId/documentation"
-                params={{ projectId: activeProject.id }}
-              >
-                <FileText className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Chapters</span>
-              </NavLink>
-              <NavLink
-                to="/app/projects/$projectId/code"
-                params={{ projectId: activeProject.id }}
-              >
-                <FileCode className="h-4 w-4 shrink-0" aria-hidden />
-                <span>Code</span>
-              </NavLink>
-            </>
+                <span>This Project</span>
+                <ChevronDown
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    projectOpen ? "rotate-0" : "-rotate-90",
+                  )}
+                />
+              </button>
+              {projectOpen && (
+                <div className="space-y-1">
+                  <NavLink
+                    to="/app/projects/$projectId"
+                    params={{ projectId: activeProject.id }}
+                    exact
+                  >
+                    <FolderKanban className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>Overview</span>
+                  </NavLink>
+                  <NavLink
+                    to="/app/projects/$projectId/adviser"
+                    params={{ projectId: activeProject.id }}
+                  >
+                    <BotMessageSquare className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>Adviser Chat</span>
+                  </NavLink>
+                  <NavLink
+                    to="/app/projects/$projectId/documentation"
+                    params={{ projectId: activeProject.id }}
+                  >
+                    <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>Chapters</span>
+                  </NavLink>
+                  <NavLink
+                    to="/app/projects/$projectId/code"
+                    params={{ projectId: activeProject.id }}
+                  >
+                    <FileCode className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>Code</span>
+                  </NavLink>
+                </div>
+              )}
+            </section>
           )}
         </nav>
 

@@ -28,6 +28,7 @@ import {
   quotaExceededResponse,
   withUsage,
 } from "./quota";
+import { DEFAULT_CHAT_MODEL, resolveChatModel } from "../../../src/services/ai/models";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -110,8 +111,6 @@ export async function requireUserId(
 // NVIDIA proxy (centralized)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_CHAT_MODEL = "meta/llama-3.1-70b-instruct";
-
 interface ChatMessage {
   role: string;
   content: string;
@@ -122,13 +121,15 @@ async function nvidiaChat(
   mode: string,
   env: Env,
   signal?: AbortSignal,
+  modelOverride?: string,
 ): Promise<AIChatResponse> {
   const apiKey = env.NVIDIA_API_KEY;
   if (!apiKey) {
     throw new Error("NVIDIA_API_KEY is not configured on the server.");
   }
 
-  const model = env.NVIDIA_CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
+  const model =
+    modelOverride ?? resolveChatModel(mode as any, messages) ?? env.NVIDIA_CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
 
   const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
     method: "POST",
@@ -172,7 +173,7 @@ async function nvidiaChat(
 
 async function parseChatRequest(
   request: Request,
-): Promise<{ messages: ChatMessage[]; mode?: string } | Response> {
+): Promise<{ messages: ChatMessage[]; mode?: string; model?: string } | Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -193,7 +194,7 @@ async function parseChatRequest(
     ...parsed.messages.map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  return { messages, mode: parsed.mode };
+  return { messages, mode: parsed.mode, model: parsed.model };
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +214,7 @@ export async function handleAIChat(
   if (usage.remaining < COSTS.chat) return cors(quotaExceededResponse(usage));
 
   try {
-    const response = await nvidiaChat(parsed.messages, parsed.mode ?? "GENERAL_ADVISER", env);
+    const response = await nvidiaChat(parsed.messages, parsed.mode ?? "GENERAL_ADVISER", env, undefined, parsed.model);
     const charged = await addUsage(env, request, userId, COSTS.chat);
     return cors(withUsage(new Response(JSON.stringify(response), {
       status: 200,
@@ -243,7 +244,8 @@ export async function handleAIChatStream(
   const apiKey = env.NVIDIA_API_KEY;
   if (!apiKey) return cors(serverError("NVIDIA_API_KEY is not configured on the server."));
 
-  const model = env.NVIDIA_CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
+  const model =
+    parsed.model ?? resolveChatModel(parsed.mode as any, parsed.messages) ?? env.NVIDIA_CHAT_MODEL ?? DEFAULT_CHAT_MODEL;
 
   let upstream: globalThis.Response;
   try {
@@ -466,6 +468,11 @@ export async function handleAIGenerate(
     "- Present your output as a suggested draft the student can adapt.",
     "- Do not invent statistics, real names, or citations you cannot verify.",
     "- Use standard capstone manuscript structure appropriate to Philippine universities.",
+    "RICH CONTENT REQUIREMENTS:",
+    "- Where a data summary or comparison fits, include a Markdown TABLE.",
+    "- Where a diagram/figure would help, insert a placeholder line like: [FIGURE: caption describing the diagram].",
+    "- Insert in-text citation placeholders as [Author, Year] wherever a claim would be evidenced.",
+    "- End with a short one-line transition sentence that sets up the NEXT section.",
   ]
     .filter(Boolean)
     .join("\n");

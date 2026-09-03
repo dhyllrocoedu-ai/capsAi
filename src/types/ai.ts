@@ -32,6 +32,8 @@ export interface AIChatRequest {
   mode: AdviserMode;
   temperature?: number;
   maxTokens?: number;
+  /** Optional explicit model override (per-conversation picker). */
+  model?: string;
 }
 
 export interface AIChatResponse {

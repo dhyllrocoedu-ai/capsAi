@@ -5,14 +5,15 @@ import type {
   EmbeddingResponse,
 } from "@/types";
 
+import { DEFAULT_EMBED_MODEL, resolveChatModel } from "./models";
+
 const DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const DEFAULT_CHAT_MODEL = "meta/llama-3.1-70b-instruct";
-const DEFAULT_EMBED_MODEL = "nvidia/nv-embedqa-e5-v5";
 const AI_PROXY_URL = "/api/ai"; // Cloudflare Pages Function endpoint
 
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
+  model?: string;
 }
 
 interface EmbeddingsResponse {
@@ -31,7 +32,6 @@ export class NvidiaNimProvider implements AIProvider {
   readonly name = "nvidia-nim";
   private readonly apiKey: string;
   private readonly baseUrl: string;
-  private readonly chatModel: string;
   private readonly embedModel: string;
   private readonly useProxy: boolean;
 
@@ -42,8 +42,6 @@ export class NvidiaNimProvider implements AIProvider {
       "";
     this.baseUrl =
       config?.baseUrl ?? (import.meta.env.VITE_NVIDIA_BASE_URL as string | undefined) ?? DEFAULT_BASE_URL;
-    this.chatModel =
-      (import.meta.env.VITE_NVIDIA_CHAT_MODEL as string | undefined) ?? DEFAULT_CHAT_MODEL;
     this.embedModel =
       (import.meta.env.VITE_NVIDIA_EMBED_MODEL as string | undefined) ?? DEFAULT_EMBED_MODEL;
     this.useProxy = (import.meta.env.VITE_AI_USE_PROXY as string | undefined) === "true" || this.apiKey.length === 0;
@@ -54,6 +52,8 @@ export class NvidiaNimProvider implements AIProvider {
   }
 
   async chat(request: AIChatRequest): Promise<AIChatResponse> {
+    const model = resolveChatModel(request.mode, request.messages, request.model);
+
     if (this.useProxy) {
       const res = await fetch(`${AI_PROXY_URL}/chat`, {
         method: "POST",
@@ -63,6 +63,7 @@ export class NvidiaNimProvider implements AIProvider {
         body: JSON.stringify({
           messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
           mode: request.mode,
+          model,
           projectContext: request as any,
         }),
       });
@@ -78,7 +79,7 @@ export class NvidiaNimProvider implements AIProvider {
       const content = json.choices?.[0]?.message?.content;
       if (!content) throw new Error("AI provider returned an empty response.");
 
-      return { content, model: json.model ?? this.chatModel, provider: this.name };
+      return { content, model: json.model ?? model, provider: this.name };
     }
 
     if (!this.isConfigured) {
@@ -93,7 +94,7 @@ export class NvidiaNimProvider implements AIProvider {
         Accept: "application/json",
       },
       body: JSON.stringify({
-        model: this.chatModel,
+        model,
         messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
         temperature: request.temperature ?? 0.4,
         top_p: 0.9,
@@ -113,7 +114,7 @@ export class NvidiaNimProvider implements AIProvider {
     const content = json.choices?.[0]?.message?.content;
     if (!content) throw new Error("AI provider returned an empty response.");
 
-    return { content, model: this.chatModel, provider: this.name };
+    return { content, model: json.model ?? model, provider: this.name };
   }
 
   async embed(texts: string[]): Promise<EmbeddingResponse> {

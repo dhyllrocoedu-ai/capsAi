@@ -28,6 +28,7 @@ import {
 } from "@/types";
 import { getAIProvider } from "@/services/ai";
 import type { ProjectContextInput } from "@/services/ai/prompts";
+import { NIVIDA_MODELS } from "@/services/ai/models";
 import { aiChatStream, QuotaError } from "@/lib/api/ai";
 import { UsageMeter, QuotaBlockedCard } from "@/components/ai/UsageMeter";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -67,6 +68,7 @@ export function AIAdviserPage() {
   );
 
   const [mode, setMode] = useState<AdviserMode>("GENERAL_ADVISER");
+  const [model, setModel] = useState<string | undefined>(undefined);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -250,6 +252,7 @@ const userTurn: ChatTurn = {
         await aiChatStream(
           {
             mode: "CHAPTER_ASSISTANT",
+            model,
             messages: history.map((t) => ({ role: t.role, content: t.content })),
           },
           projectContext,
@@ -290,6 +293,7 @@ const userTurn: ChatTurn = {
         await aiChatStream(
           {
             mode,
+            model,
             messages: history.map((t) => ({ role: t.role, content: t.content })),
           },
           projectContext,
@@ -555,6 +559,19 @@ const userTurn: ChatTurn = {
               {ADVISER_MODES.map((m) => (
                 <option key={m} value={m}>
                   {ADVISER_MODE_LABELS[m]}
+                </option>
+              ))}
+            </Select>
+            <Select
+              aria-label="AI model"
+              className="h-8 w-auto max-w-[200px] text-xs"
+              value={model ?? ""}
+              onChange={(e) => setModel(e.target.value || undefined)}
+            >
+              <option value="">Auto (recommended)</option>
+              {NIVIDA_MODELS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
                 </option>
               ))}
             </Select>

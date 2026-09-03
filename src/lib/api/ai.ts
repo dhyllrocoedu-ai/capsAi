@@ -223,6 +223,7 @@ export async function aiChat(
     return await postAI<AIChatResponse>("/chat", {
       mode: request.mode,
       messages,
+      model: request.model,
       projectContext,
     }, signal);
   } catch (err) {
@@ -258,7 +259,7 @@ export async function aiChatStream(
     const res = await fetch(`${AI_BASE}/chat/stream`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ mode: request.mode, messages, projectContext }),
+      body: JSON.stringify({ mode: request.mode, messages, projectContext, model: request.model }),
       signal,
     });
     if (res.status === 429) await parseQuotaRejection(res);

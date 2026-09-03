@@ -5,6 +5,7 @@ import {
   ArrowRight,
   BotMessageSquare,
   CheckCircle2,
+  FileText,
   Lightbulb,
   Target,
   Users,
@@ -301,6 +302,13 @@ export function ProjectWizardPage() {
               params: { projectId: projectId },
             });
           }}
+          onViewDraft={() => {
+            persist();
+            void navigate({
+              to: "/app/projects/$projectId/documentation",
+              params: { projectId: projectId },
+            });
+          }}
           summary={summary}
           summarizing={summarizing}
           onRunSummary={runSummary}
@@ -381,6 +389,7 @@ function Step({
   onNext,
   onPrev,
   onDone,
+  onViewDraft,
   summary,
   summarizing,
   onRunSummary,
@@ -404,6 +413,7 @@ function Step({
   onNext: () => void;
   onPrev: () => void;
   onDone: () => void;
+  onViewDraft: () => void;
   summary: string | null;
   summarizing: boolean;
   onRunSummary: () => void;
@@ -764,7 +774,14 @@ function Step({
               Continue <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={onDone}>Done — go to overview</Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={onDone}>
+                Go to overview
+              </Button>
+              <Button onClick={onViewDraft}>
+                <FileText className="h-4 w-4" /> View my draft thesis
+              </Button>
+            </div>
           )}
         </div>
       </div>

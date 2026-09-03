@@ -65,6 +65,10 @@ REQUIREMENTS:
 - Do NOT invent statistics, citations, or specific data you cannot verify
 - Use standard capstone manuscript structure for Philippine universities
 - Maintain logical flow from previous sections and set up next sections
+- Where a data summary or comparison fits, include a Markdown TABLE (using | columns |)
+- Where a diagram/figure would help, insert a placeholder line like: [FIGURE: caption describing the diagram]
+- Insert in-text citation placeholders as [Author, Year] wherever a claim would be evidenced
+- End the section with a short one-line transition sentence that sets up the NEXT section
 
 FORMAT:
 Return ONLY the section content in Markdown format.
