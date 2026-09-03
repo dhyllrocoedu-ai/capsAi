@@ -305,8 +305,12 @@ export async function handleAIChatStream(
               if (delta) push({ delta });
             } catch {
               // skip malformed upstream line
-}
-}
+            }
+          }
+        }
+      }
+    }
+  }
 
 // ---------------------------------------------------------------------------
 // Handler: POST /api/ai/wizard-suggest
