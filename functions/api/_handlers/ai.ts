@@ -316,6 +316,15 @@ export async function handleAIChatStream(
     },
   });
 
+  return cors(withUsage(new Response(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache",
+    },
+  }), charged));
+}
+
   // ---------------------------------------------------------------------------
   // Handler: POST /api/ai/wizard-suggest
 // ---------------------------------------------------------------------------
