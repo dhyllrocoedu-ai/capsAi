@@ -5,5 +5,5 @@ pages_build_output_dir = "dist"
 
 # Usage-quota counters
 [[kv_namespaces]]
-binding = "USAGE_KV"
+binding = "capsai-usage"
 id = "459b931e4fb640789b8ddfd851fd3510"
