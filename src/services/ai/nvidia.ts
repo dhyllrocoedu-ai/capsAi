@@ -6,7 +6,7 @@ import type {
 } from "@/types";
 
 const DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const DEFAULT_CHAT_MODEL = "meta/llama-3.3-70b-instruct";
+const DEFAULT_CHAT_MODEL = "meta/llama-3.1-70b-instruct";
 const DEFAULT_EMBED_MODEL = "nvidia/nv-embedqa-e5-v5";
 const AI_PROXY_URL = "/api/ai"; // Cloudflare Pages Function endpoint
 

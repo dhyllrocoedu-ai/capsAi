@@ -110,7 +110,7 @@ export async function requireUserId(
 // NVIDIA proxy (centralized)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_CHAT_MODEL = "meta/llama-3.3-70b-instruct";
+const DEFAULT_CHAT_MODEL = "meta/llama-3.1-70b-instruct";
 
 interface ChatMessage {
   role: string;
