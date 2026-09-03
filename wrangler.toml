@@ -3,8 +3,7 @@ compatibility_flags = ["nodejs_compat"]
 compatibility_date = "2025-01-01"
 pages_build_output_dir = "dist"
 
-# Usage-quota counters. `wrangler pages dev` simulates this locally.
-# Before deploy: npx wrangler kv namespace create USAGE_KV  (then paste the id)
+# Usage-quota counters
 [[kv_namespaces]]
 binding = "USAGE_KV"
-id = "local-dev-placeholder"
+id = "459b931e4fb640789b8ddfd851fd3510"
