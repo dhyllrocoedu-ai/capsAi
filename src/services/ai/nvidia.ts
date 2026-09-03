@@ -46,7 +46,7 @@ export class NvidiaNimProvider implements AIProvider {
       (import.meta.env.VITE_NVIDIA_CHAT_MODEL as string | undefined) ?? DEFAULT_CHAT_MODEL;
     this.embedModel =
       (import.meta.env.VITE_NVIDIA_EMBED_MODEL as string | undefined) ?? DEFAULT_EMBED_MODEL;
-    this.useProxy = (import.meta.env.VITE_AI_USE_PROXY as string | undefined) === "true";
+    this.useProxy = (import.meta.env.VITE_AI_USE_PROXY as string | undefined) === "true" || this.apiKey.length === 0;
   }
 
   get isConfigured(): boolean {
@@ -119,6 +119,9 @@ export class NvidiaNimProvider implements AIProvider {
   }
 
   async embed(texts: string[]): Promise<EmbeddingResponse> {
+    if (this.useProxy) {
+      throw new Error("Embeddings are not available in proxy mode (no server endpoint).");
+    }
     if (!this.isConfigured) {
       throw new Error("NVIDIA API key is not configured.");
     }
