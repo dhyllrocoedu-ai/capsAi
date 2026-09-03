@@ -110,7 +110,7 @@ export async function requireUserId(
 // NVIDIA proxy (centralized)
 // ---------------------------------------------------------------------------
 
-const DEFAULT_CHAT_MODEL = "nvidia/nemotron-3-nano-30b-a3b";
+const DEFAULT_CHAT_MODEL = "meta/llama-3.3-70b-instruct";
 
 interface ChatMessage {
   role: string;
@@ -143,8 +143,6 @@ async function nvidiaChat(
       top_p: 0.9,
       max_tokens: 2048,
       stream: false,
-      // Nemotron reasoning models: skip the hidden thinking phase.
-      chat_template_kwargs: { enable_thinking: false },
     }),
     signal,
   });
@@ -262,8 +260,6 @@ export async function handleAIChatStream(
         top_p: 0.9,
         max_tokens: 2048,
         stream: true,
-        // Nemotron reasoning models: skip the hidden thinking phase.
-        chat_template_kwargs: { enable_thinking: false },
       }),
     });
   } catch (err) {

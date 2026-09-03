@@ -6,7 +6,7 @@ import type {
 } from "@/types";
 
 const DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1";
-const DEFAULT_CHAT_MODEL = "nvidia/nemotron-3-nano-30b-a3b";
+const DEFAULT_CHAT_MODEL = "meta/llama-3.3-70b-instruct";
 const DEFAULT_EMBED_MODEL = "nvidia/nv-embedqa-e5-v5";
 const AI_PROXY_URL = "/api/ai"; // Cloudflare Pages Function endpoint
 
@@ -99,8 +99,6 @@ export class NvidiaNimProvider implements AIProvider {
         top_p: 0.9,
         max_tokens: request.maxTokens ?? 1024,
         stream: false,
-        // Nemotron reasoning models: skip the hidden thinking phase.
-        chat_template_kwargs: { enable_thinking: false },
       }),
     });
 
