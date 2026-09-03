@@ -271,7 +271,7 @@ export async function handleAIChatStream(
     return cors(serverError(`NVIDIA error ${upstream.status}: ${detail.slice(0, 200)}`));
   }
 
-  // Upstream accepted — charge the caller before streaming begins.
+// Upstream accepted — charge the caller before streaming begins.
   const charged = await addUsage(env, request, userId, COSTS.chat);
 
   // Re-emit upstream OpenAI-style SSE chunks as simple {delta} events.
@@ -280,11 +280,12 @@ export async function handleAIChatStream(
   let buffer = "";
   const source = upstream.body;
 
+  const push = (obj: unknown) =>
+    encoder.encode(`data: ${JSON.stringify(obj)}\n\n`);
+
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const reader = source.getReader();
-      const push = (obj: unknown) =>
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
       try {
         for (;;) {
           const { done, value } = await reader.read();
@@ -302,19 +303,18 @@ export async function handleAIChatStream(
                 choices?: Array<{ delta?: { content?: string } }>;
               };
               const delta = json.choices?.[0]?.delta?.content;
-              if (delta) push({ delta });
+              if (delta) controller.enqueue(push({ delta }));
             } catch {
               // skip malformed upstream line
             }
           }
         }
-} finally {
+      } finally {
         controller.close();
         reader.releaseLock();
       }
-    }
-  }
-});
+    },
+  });
 
   // ---------------------------------------------------------------------------
   // Handler: POST /api/ai/wizard-suggest
