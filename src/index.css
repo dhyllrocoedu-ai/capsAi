@@ -77,3 +77,92 @@
 * {
   scrollbar-width: thin;
 }
+
+/* ---------- Markdown (chat + AI suggestions) ---------- */
+.md-prose {
+  line-height: 1.6;
+  font-size: 14px;
+}
+.md-prose p {
+  margin-bottom: 0.6rem;
+}
+.md-prose p:last-child {
+  margin-bottom: 0;
+}
+.md-prose strong {
+  font-weight: 600;
+}
+.md-prose em {
+  font-style: italic;
+}
+.md-prose h1, .md-prose h2, .md-prose h3 {
+  font-weight: 700;
+  margin-top: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+.md-prose h1 { font-size: 1.1rem; }
+.md-prose h2 { font-size: 1rem; }
+.md-prose h3 { font-size: 0.95rem; }
+.md-prose ul, .md-prose ol {
+  margin: 0.4rem 0 0.6rem 1.25rem;
+}
+.md-prose ul { list-style: disc; }
+.md-prose ol { list-style: decimal; }
+.md-prose li { margin-bottom: 0.2rem; }
+.md-prose blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 10px;
+  margin: 0.5rem 0;
+  color: #475569;
+  font-style: italic;
+}
+.md-prose code {
+  background: rgba(15, 23, 42, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.md-prose .md-code-block {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+  font-size: 12px;
+}
+.md-prose .md-code-block code {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+}
+.md-prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+  font-size: 13px;
+}
+.md-prose th, .md-prose td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  text-align: left;
+}
+.md-prose th {
+  background: rgba(15, 23, 42, 0.05);
+  font-weight: 600;
+}
+.md-prose .figure-placeholder {
+  border: 1px dashed #cbd5e1;
+  background: rgba(15, 23, 42, 0.04);
+  border-radius: 6px;
+  padding: 10px;
+  margin: 0.5rem 0;
+  text-align: center;
+}
+.md-prose .figure-placeholder .figure-caption {
+  font-style: italic;
+  color: #64748b;
+  margin-top: 4px;
+  font-size: 12px;
+}

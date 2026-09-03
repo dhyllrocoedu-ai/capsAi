@@ -29,6 +29,7 @@ import {
 import { getAIProvider } from "@/services/ai";
 import type { ProjectContextInput } from "@/services/ai/prompts";
 import { NIVIDA_MODELS } from "@/services/ai/models";
+import { Markdown } from "@/components/ui/Markdown";
 import { aiChatStream, QuotaError } from "@/lib/api/ai";
 import { UsageMeter, QuotaBlockedCard } from "@/components/ai/UsageMeter";
 import { useAuthStore } from "@/lib/stores/authStore";
@@ -592,7 +593,11 @@ const userTurn: ChatTurn = {
                     : "bg-surface-100 text-surface-800 dark:bg-surface-800 dark:text-surface-100",
                 )}
               >
-                <p className="whitespace-pre-wrap">{t.content}</p>
+                {t.role === "assistant" ? (
+                  <Markdown content={t.content} />
+                ) : (
+                  <p className="whitespace-pre-wrap">{t.content}</p>
+                )}
                 {codeBlocks.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {codeBlocks.slice(0, 3).map((block, idx) => (

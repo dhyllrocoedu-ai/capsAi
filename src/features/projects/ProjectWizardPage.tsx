@@ -29,6 +29,7 @@ import {
 } from "@/services/thesis/wizardAi";
 import { useAuthStore } from "@/lib/stores/authStore";
 import { DynamicFieldList } from "@/features/projects/DynamicFieldList";
+import { Markdown } from "@/components/ui/Markdown";
 
 type WizardStep =
   | "problem"
@@ -605,7 +606,7 @@ function Step({
             </div>
           ) : (
             <div className="rounded-xl border border-surface-200 bg-surface-50 p-4 text-sm leading-relaxed dark:border-surface-800 dark:bg-surface-950">
-              <p className="whitespace-pre-wrap">{summary}</p>
+              <Markdown content={summary} />
             </div>
           )}
           <div className="rounded-xl border border-surface-200 p-4 dark:border-surface-800">
