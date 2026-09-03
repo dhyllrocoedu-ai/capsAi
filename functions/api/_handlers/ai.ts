@@ -308,13 +308,16 @@ export async function handleAIChatStream(
             }
           }
         }
-      } finally {
+} finally {
         controller.close();
         reader.releaseLock();
       }
+    }
+  }
+});
 
-// ---------------------------------------------------------------------------
-// Handler: POST /api/ai/wizard-suggest
+  // ---------------------------------------------------------------------------
+  // Handler: POST /api/ai/wizard-suggest
 // ---------------------------------------------------------------------------
 
 export async function handleWizardSuggest(
