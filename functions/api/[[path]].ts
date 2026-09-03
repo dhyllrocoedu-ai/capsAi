@@ -10,6 +10,7 @@
  *   POST /api/ai/chat/stream    -> SSE token stream
  *   POST /api/ai/generate       -> chapter draft generation
  *   POST /api/ai/review         -> capstone review
+ *   POST /api/ai/wizard-suggest -> wizard auto-fill + clarifying questions
  */
 
 export const onRequestPost = async (ctx: {
@@ -37,6 +38,11 @@ export const onRequestPost = async (ctx: {
   if (path === "/api/ai/review") {
     const { handleAIReview } = await import("./_handlers/ai");
     return handleAIReview(ctx.request, ctx.env);
+  }
+
+  if (path === "/api/ai/wizard-suggest") {
+    const { handleWizardSuggest } = await import("./_handlers/ai");
+    return handleWizardSuggest(ctx.request, ctx.env);
   }
 
   return new Response(JSON.stringify({ error: "Not found" }), {

@@ -310,7 +310,7 @@ function Step({
       {step === "problem" && (
         <>
           <StepHeading
-            title="Step 2 — The Problem"
+            title="Step 1 — The Problem"
             description="Help me understand the gap your system addresses."
           />
           <Textarea
@@ -349,7 +349,7 @@ function Step({
       {step === "solution" && (
         <>
           <StepHeading
-            title="Step 3 — Proposed Solution"
+            title="Step 2 — Proposed Solution"
             description="Describe the system you want to build."
           />
           <Textarea
@@ -379,7 +379,7 @@ function Step({
       {step === "objectives" && (
         <>
           <StepHeading
-            title="Step 4 — Objectives"
+            title="Step 3 — Objectives"
             description="What exactly should your system achieve?"
           />
           <Textarea
@@ -403,7 +403,7 @@ function Step({
       {step === "scope" && (
         <>
           <StepHeading
-            title="Step 5 — Scope and Limitations"
+            title="Step 4 — Scope and Limitations"
             description="Set clear boundaries so your manuscript stays realistic."
           />
           <DynamicFieldList
@@ -427,7 +427,7 @@ function Step({
       {step === "methodology" && (
         <>
           <StepHeading
-            title="Step 6 — Methodology"
+            title="Step 5 — Methodology"
             description="How will you build and evaluate the system?"
           />
           <Select
