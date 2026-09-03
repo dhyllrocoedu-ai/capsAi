@@ -305,8 +305,109 @@ export async function handleAIChatStream(
               if (delta) push({ delta });
             } catch {
               // skip malformed upstream line
-            }
-          }
+}
+}
+
+// ---------------------------------------------------------------------------
+// Handler: POST /api/ai/wizard-suggest
+// ---------------------------------------------------------------------------
+
+export async function handleWizardSuggest(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const userId = await requireUserId(request, env);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return cors(badRequest("Invalid JSON body."));
+  }
+
+  const parsed = body as {
+    currentProfile: Record<string, unknown>;
+    step?: string;
+    action: "analyze" | "autofill" | "questions";
+  };
+
+  if (!parsed?.currentProfile) return cors(badRequest("currentProfile is required."));
+  if (!parsed?.action) return cors(badRequest("action is required."));
+
+  const usage = await getUsage(env, request, userId);
+  if (usage.remaining < COSTS.wizard) return cors(quotaExceededResponse(usage));
+
+  const systemPrompt = `You are an expert capstone adviser helping a student fill out their project knowledge profile wizard. 
+
+CURRENT PROFILE STATE:
+${JSON.stringify(parsed.currentProfile, null, 2)}
+
+CURRENT STEP: ${parsed.step || "unknown"}
+ACTION: ${parsed.action}
+
+${parsed.action === "analyze" 
+  ? `TASK: Analyze the current profile and provide specific suggestions for improvement.
+OUTPUT JSON FORMAT:
+{
+  "analysis": {
+    "strengths": string[],
+    "gaps": string[],
+    "fieldSuggestions": { fieldName: { suggestedValue: string, reasoning: string } }
+  }
+}`
+  : parsed.action === "autofill"
+  ? `TASK: Fill in ALL missing/empty fields with reasonable academic values based on the provided context.
+Only return fields that are currently empty or have placeholder values.
+OUTPUT JSON FORMAT:
+{
+  "autofill": { fieldName: { value: string, reasoning: string } }
+}`
+  : `TASK: Generate 3-5 clarifying questions to help the student improve their profile.
+Each question should have 3-4 specific, clickable answer choices.
+OUTPUT JSON FORMAT:
+{
+  "questions": [
+    {
+      "field": "fieldName",
+      "question": "Clear question text",
+      "choices": [
+        { "label": "Choice 1", "value": "Value for field" },
+        { "label": "Choice 2", "value": "Value for field" },
+        { "label": "Choice 3", "value": "Value for field" }
+      ]
+    }
+  ]
+}`}
+
+IMPORTANT: Return ONLY valid JSON. No extra prose.`;
+
+  try {
+    const response = await nvidiaChat(
+      [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Please provide ${parsed.action} suggestions for the wizard profile.` },
+      ],
+      "GENERAL_ADVISER",
+      env,
+    );
+
+    let parsedResult: any;
+    try {
+      const jsonMatch = response.content.match(/\{[\s\S]*\}/);
+      parsedResult = jsonMatch ? JSON.parse(jsonMatch[0]) : { error: "Failed to parse AI response" };
+    } catch {
+      parsedResult = { error: "Failed to parse AI response" };
+    }
+
+    const charged = await addUsage(env, request, userId, COSTS.wizard);
+    return cors(withUsage(new Response(JSON.stringify(parsedResult), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }), charged));
+  } catch (err) {
+    return cors(serverError(err instanceof Error ? err.message : "Wizard suggestion failed."));
+  }
+}
         }
         push("[DONE]");
       } catch (err) {

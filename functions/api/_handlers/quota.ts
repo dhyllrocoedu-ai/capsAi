@@ -21,7 +21,7 @@
 
 import type { UsageStatus } from "../../../src/types";
 
-export const COSTS = { chat: 1, generate: 3, review: 5 } as const;
+export const COSTS = { chat: 1, generate: 3, review: 5, wizard: 3 } as const;
 export type CostKey = keyof typeof COSTS;
 
 export const LIMITS = { anon: 10, user: 100 } as const;
